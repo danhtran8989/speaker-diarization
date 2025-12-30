@@ -232,7 +232,7 @@ RTF: {rtf:.2f}x
         print(f"Transcription saved to: {os.path.abspath(output_file)}")
     except Exception as e:
         print(f"Failed to save transcription file: {e}")
-
+    print("DONE")
     return diarization_text, build_result_html(diarization_text, transcription_text, info)
 
 # ────────────────────────────────────────────────────────────────
