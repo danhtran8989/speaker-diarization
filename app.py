@@ -1,23 +1,9 @@
+# app.py
 #!/usr/bin/env python3
 #
-# Copyright      2024  Xiaomi Corp.        (authors: Fangjun Kuang)
-#
-# See LICENSE for clarification regarding multiple authors
+# Copyright 2024 Xiaomi Corp. (authors: Fangjun Kuang)
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
-# References:
-# https://gradio.app/docs/#dropdown
 
 import logging
 import os
@@ -29,7 +15,6 @@ import uuid
 from datetime import datetime
 
 import gradio as gr
-
 from examples import examples
 from model import (
     embedding2models,
@@ -42,13 +27,11 @@ from model import (
 embedding_frameworks = list(embedding2models.keys())
 
 waves = [e[-1] for e in examples]
-
 for name in waves:
     filename = get_file(
         "csukuangfj/speaker-embedding-models",
         name,
     )
-
     shutil.copyfile(filename, name)
 
 
@@ -62,12 +45,10 @@ def convert_to_wav(in_filename: str) -> str:
     """Convert the input audio file to a wave file"""
     out_filename = str(uuid.uuid4())
     out_filename = f"{in_filename}.wav"
-
     MyPrint(f"Converting '{in_filename}' to '{out_filename}'")
     _ = os.system(
         f"ffmpeg -hide_banner -loglevel error -i '{in_filename}' -ar 16000 -ac 1 '{out_filename}' -y"
     )
-
     return out_filename
 
 
@@ -95,7 +76,6 @@ def process_uploaded_file(
             'the button "submit for recognition"',
             "result_item_error",
         )
-
     MyPrint(f"Processing uploaded file: {in_filename}")
     try:
         return process(
@@ -126,7 +106,6 @@ def process_microphone(
             "click the button 'submit for speaker diarization'",
             "result_item_error",
         )
-
     MyPrint(f"Processing microphone: {in_filename}")
     try:
         return process(
@@ -154,7 +133,6 @@ def process_url(
     with tempfile.NamedTemporaryFile() as f:
         try:
             urllib.request.urlretrieve(url, f.name)
-
             return process(
                 in_filename=f.name,
                 embedding_framework=embedding_framework,
@@ -205,15 +183,12 @@ def process(
         input_threshold = 0
 
     filename = convert_to_wav(in_filename)
-
     now = datetime.now()
     date_time = now.strftime("%Y-%m-%d %H:%M:%S.%f")
     MyPrint(f"Started at {date_time}")
-
     start = time.time()
 
     audio, sample_rate = read_wave(filename)
-
     MyPrint(f"audio, {audio.shape[0] / sample_rate}, {sample_rate}")
 
     sd = get_speaker_diarization(
@@ -222,23 +197,22 @@ def process(
         num_clusters=input_num_speakers,
         threshold=input_threshold,
     )
-    MyPrint(f"{audio.shape[0] / sd.sample_rate}, {sample_rate}")
 
+    MyPrint(f"{audio.shape[0] / sd.sample_rate}, {sample_rate}")
     segments = sd.process(audio).sort_by_start_time()
+
     s = ""
     for seg in segments:
         s += f"{seg.start:.3f} -- {seg.end:.3f} speaker_{seg.speaker:02d}\n"
 
-    date_time = now.strftime("%Y-%m-%d %H:%M:%S.%f")
     end = time.time()
-
     duration = audio.shape[0] / sd.sample_rate
     rtf = (end - start) / duration
 
     MyPrint(f"Finished at {date_time} s. Elapsed: {end - start: .3f} s")
 
     info = f"""
-    Wave duration  : {duration: .3f} s <br/>
+    Wave duration : {duration: .3f} s <br/>
     Processing time: {end - start: .3f} s <br/>
     RTF: {end - start: .3f}/{duration: .3f} = {rtf:.3f} <br/>
     """
@@ -255,30 +229,23 @@ def process(
 
 
 title = "# Speaker diarization with Next-gen Kaldi"
+
 description = """
 This space shows how to do speaker diarization with Next-gen Kaldi.
-
 It is running on CPU within a docker container provided by Hugging Face.
-
 See more information by visiting
 <https://k2-fsa.github.io/sherpa/onnx/speaker-diarization/index.html>
-
 If you want to try it on Android, please download pre-built Android
 APKs for speaker diarzation by visiting
 <https://k2-fsa.github.io/sherpa/onnx/speaker-diarization/android.html>
-
 ---
-
 Note about the two arguments:
-
     - number of speakers: If you know the actual number of speakers in the input file,
       please provide it. Otherwise, please set it to 0
     - clustering threshold: Used only when number of speakers is 0. A larger
       threshold results in fewer clusters, i.e., fewer speakers.
 """
 
-# css style is copied from
-# https://huggingface.co/spaces/alphacep/asr/blob/main/app.py#L113
 css = """
 .result {display:flex;flex-direction:column}
 .result_item {padding:15px;margin-bottom:8px;border-radius:15px;width:100%}
@@ -295,13 +262,10 @@ def update_embedding_model_dropdown(framework: str):
             value=choices[0],
             interactive=True,
         )
-
     raise ValueError(f"Unsupported framework: {framework}")
 
 
 demo = gr.Blocks(css=css)
-
-
 with demo:
     gr.Markdown(title)
 
@@ -351,7 +315,7 @@ with demo:
     with gr.Tabs():
         with gr.TabItem("Upload from disk"):
             uploaded_file = gr.Audio(
-                sources=["upload"],  # Choose between "microphone", "upload"
+                sources=["upload"],
                 type="filepath",
                 label="Upload from disk",
             )
@@ -372,13 +336,13 @@ with demo:
                 outputs=[uploaded_output, uploaded_html_info],
                 fn=process_uploaded_file,
             )
+
         with gr.TabItem("Record from microphone"):
             microphone = gr.Audio(
-                sources=["microphone"],  # Choose between "microphone", "upload"
+                sources=["microphone"],
                 type="filepath",
                 label="Record from microphone",
             )
-
             record_button = gr.Button("Submit for speaker diarization")
             recorded_output = gr.Textbox(label="Result from recordings")
             recorded_html_info = gr.HTML(label="Info")
@@ -404,7 +368,6 @@ with demo:
                 label="URL",
                 interactive=True,
             )
-
             url_button = gr.Button("Submit for speaker diarization")
             url_output = gr.Textbox(label="Result from URL")
             url_html_info = gr.HTML(label="Info")
@@ -450,9 +413,8 @@ with demo:
 
     gr.Markdown(description)
 
+
 if __name__ == "__main__":
     formatter = "%(asctime)s %(levelname)s [%(filename)s:%(lineno)d] %(message)s"
-
     logging.basicConfig(format=formatter, level=logging.WARNING)
-
     demo.launch(share=True)
