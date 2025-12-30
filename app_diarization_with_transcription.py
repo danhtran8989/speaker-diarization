@@ -226,6 +226,7 @@ css = """
 .gradio-container {font-family: system-ui, sans-serif;}
 """
 
+# with gr.Blocks(css=css) as demo:
 with gr.Blocks(css=css) as demo:
     gr.Markdown("# Speaker Diarization + Transcription (Whisper - fixed)")
 
@@ -310,3 +311,4 @@ with gr.Blocks(css=css) as demo:
 if __name__ == "__main__":
     demo.launch()
     # demo.launch(share=True)  # uncomment to create public link
+
