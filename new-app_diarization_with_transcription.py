@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 # app_diarization_with_transcription.py
 """
-Gradio app: Speaker Diarization + Whisper transcription for each speaker segment
-Based on Next-gen Kaldi (sherpa-onnx) + whisper-timestamped
-Improved CSS for dark/light theme - 2025
+Gradio app: Speaker Diarization + Whisper transcription
+Improved dark/light theme support + auto-save transcription to file
+Last update: Dec 2025
 """
 
 import os
@@ -93,7 +93,7 @@ def transcribe_segment(audio_np: np.ndarray, sample_rate: int, start: float, end
     end_sample = int(end * sample_rate)
     segment_audio = audio_np[start_sample:end_sample]
 
-    if len(segment_audio) < 320:  # ~20ms @ 16kHz
+    if len(segment_audio) < 320:
         return "(đoạn quá ngắn)"
 
     try:
@@ -117,7 +117,7 @@ def transcribe_segment(audio_np: np.ndarray, sample_rate: int, start: float, end
         return f"[Lỗi phiên âm: {str(e)}]"
 
 # ────────────────────────────────────────────────────────────────
-# Main Processing
+# Main Processing + Save to file
 # ────────────────────────────────────────────────────────────────
 
 def process_audio_with_transcription(
@@ -181,16 +181,19 @@ def process_audio_with_transcription(
     # Build results
     diarization_lines = []
     transcription_lines = []
+    plain_transcription_lines = []  # for file saving
 
     for seg in segments:
         start = seg.start
         end = seg.end
         speaker_id = f"SPEAKER_{seg.speaker:02d}"
         time_str = f"[{format_time(start)} → {format_time(end)}]"
-        
+
         diarization_lines.append(f"{time_str} {speaker_id}")
+        
         text = transcribe_segment(audio, sample_rate, start, end)
         transcription_lines.append(f"{time_str} **{speaker_id}**: {text}")
+        plain_transcription_lines.append(f"{time_str} {speaker_id}: {text}")
 
     diarization_text = "\n".join(diarization_lines)
     transcription_text = "\n".join(transcription_lines)
@@ -216,10 +219,24 @@ RTF: {rtf:.2f}x
             except:
                 pass
 
+    # ── Save transcription to file ───────────────────────────────
+    output_file = "segment_transcription.txt"
+    try:
+        with open(output_file, "w", encoding="utf-8") as f:
+            f.write("=== SEGMENT TRANSCRIPTION ===\n")
+            f.write(f"Processed at: {time.strftime('%Y-%m-%d %H:%M:%S')}\n")
+            f.write(f"Duration: {duration:.2f}s | RTF: {rtf:.2f}x\n")
+            f.write("-" * 50 + "\n\n")
+            f.write("\n".join(plain_transcription_lines))
+            f.write("\n\n" + "="*50 + "\n")
+        print(f"Transcription saved to: {os.path.abspath(output_file)}")
+    except Exception as e:
+        print(f"Failed to save transcription file: {e}")
+
     return diarization_text, build_result_html(diarization_text, transcription_text, info)
 
 # ────────────────────────────────────────────────────────────────
-# CSS - Modern, theme-aware, high readability
+# CSS - Modern, high contrast, theme-aware
 # ────────────────────────────────────────────────────────────────
 
 css = """
@@ -230,8 +247,8 @@ css = """
     --text-muted:   var(--text-secondary, #94a3b8);
     --border:       var(--border-color-primary, #334155);
     --accent:       #38bdf8;
-    --accent-dark:  #0284c7;
     --warning:      #f59e0b;
+    --card-bg:      rgba(30, 41, 59, 0.6);
 }
 
 @media (prefers-color-scheme: light) {
@@ -240,10 +257,10 @@ css = """
         --bg-panel:     #ffffff;
         --text-main:    #0f172a;
         --text-muted:   #475569;
-        --border:       #e2e8f0;
+        --border:       #cbd5e1;
         --accent:       #0ea5e9;
-        --accent-dark:  #0369a1;
         --warning:      #d97706;
+        --card-bg:      rgba(241, 245, 249, 0.7);
     }
 }
 
@@ -254,26 +271,34 @@ css = """
 }
 
 .result-container {
-    background: var(--bg-panel);
+    background: var(--card-bg);
+    backdrop-filter: blur(6px);
     border: 1px solid var(--border);
     border-radius: 12px;
     padding: 1.5rem;
     margin: 1.25rem 0;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    color: var(--text-main);
 }
 
 .result-container h3 {
     margin-top: 0;
     color: var(--accent);
-    border-bottom: 2px solid var(--border);
     padding-bottom: 0.5rem;
+    border-bottom: 2px solid var(--border);
 }
 
 .section {
     margin: 1.25rem 0;
-    padding: 1rem;
+    padding: 1.1rem;
     border-radius: 8px;
-    background: rgba(0,0,0,0.08);
+    background: rgba(0,0,0,0.12);
+    transition: background 0.3s;
+}
+
+@media (prefers-color-scheme: light) {
+    .section {
+        background: rgba(255,255,255,0.7);
+    }
 }
 
 .section.diarization {
@@ -284,44 +309,41 @@ css = """
     border-left: 4px solid var(--warning);
 }
 
-.section .content {
-    margin-top: 0.75rem;
-    line-height: 1.5;
+.section strong {
     color: var(--text-main);
+    display: block;
+    margin-bottom: 0.6rem;
+    font-size: 1.1em;
+}
+
+.section .content {
+    line-height: 1.55;
+    color: var(--text-main);
+    white-space: pre-wrap;
 }
 
 .info-box {
     margin-top: 1.5rem;
-    padding: 0.9rem;
-    background: rgba(0,0,0,0.12);
+    padding: 1rem;
+    background: rgba(0,0,0,0.15);
     border-radius: 8px;
     font-size: 0.92rem;
     color: var(--text-muted);
-    border: 1px solid var(--border);
+    border: 1px dashed var(--border);
 }
 
 .gr-button-primary {
     background: var(--accent) !important;
-    color: white !important;
 }
 
 .gr-button-primary:hover {
-    background: var(--accent-dark) !important;
+    background: color-mix(in srgb, var(--accent) 80%, black) !important;
 }
 
 .gr-textbox, .gr-dropdown, .gr-radio {
     background: var(--bg-panel) !important;
     border-color: var(--border) !important;
     color: var(--text-main) !important;
-}
-
-.gr-label {
-    color: var(--text-muted) !important;
-}
-
-/* Make sure HTML block respects theme */
-.gr-html {
-    background: transparent !important;
 }
 """
 
@@ -338,6 +360,8 @@ with gr.Blocks(css=css) as demo:
     • Chọn mô hình embedding & segmentation  
     • Nếu biết số người nói → nhập vào "Number of speakers"  
     • Nếu không biết → để 0 và điều chỉnh ngưỡng clustering
+    
+    Kết quả phiên âm đầy đủ sẽ được lưu vào file **segment_transcription.txt**
     """
     )
 
