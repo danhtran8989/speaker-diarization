@@ -1,2 +1,3 @@
 huggingface_hub
 sherpa-onnx
+onnxruntime
