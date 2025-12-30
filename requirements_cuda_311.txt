@@ -2,5 +2,5 @@ huggingface_hub
 
 #https://huggingface.co/csukuangfj/sherpa-onnx-wheels/resolve/main/cpu/1.10.29/sherpa_onnx-1.10.29-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
 https://hf-mirror.com/csukuangfj/sherpa-onnx-wheels/resolve/main/cuda/1.12.15/sherpa_onnx-1.12.15+cuda12.cudnn9-cp311-cp311-linux_x86_64.whl
-
+onnxruntime-gpu
 #sherpa-onnx>=1.10.28
