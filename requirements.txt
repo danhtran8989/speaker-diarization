@@ -1,3 +1,4 @@
 huggingface_hub
 sherpa-onnx
 onnxruntime
+git+https://github.com/danhtran8989/whisper-timestamped.git
