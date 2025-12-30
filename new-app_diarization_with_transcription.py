@@ -224,8 +224,8 @@ RTF: {rtf:.2f}x
     try:
         with open(output_file, "w", encoding="utf-8") as f:
             f.write("=== SEGMENT TRANSCRIPTION ===\n")
-            f.write(f"Processed at: {time.strftime('%Y-%m-%d %H:%M:%S')}\n")
-            f.write(f"Duration: {duration:.2f}s | RTF: {rtf:.2f}x\n")
+            f.write(f"Processing time: {elapsed:.2f}\n")
+            f.write(f"Duration of Audio file: {duration:.2f}s | RTF - Real-time ratio): {rtf:.2f}x\n")
             f.write("-" * 50 + "\n\n")
             f.write("\n".join(plain_transcription_lines))
             f.write("\n\n" + "="*50 + "\n")
