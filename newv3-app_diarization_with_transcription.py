@@ -87,7 +87,7 @@ def build_result_html(diarization_text: str, transcription_text: str, info: str)
 # ────────────────────────────────────────────────────────────────
 def is_segment_silent(seg_audio: AudioSegment, 
                       min_silence_len: int = 500, 
-                      silence_thresh: int = -40, 
+                      silence_thresh: int = -10, 
                       silent_ratio_threshold: float = 0.9) -> bool:
     """
     Check if a pydub AudioSegment is mostly silent.
