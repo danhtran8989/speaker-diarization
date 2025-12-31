@@ -13,3 +13,11 @@ short_description: 'Speaker diarization, speake segmentation, '
 ---
 
 Check out the configuration reference at https://huggingface.co/docs/hub/spaces-config-reference
+
+## Getting Started
+
+### Create APT_KEY to download model checkpoints
+Create `.env` file and write to it like below:
+```markdown
+HF_TOKEN=hf_****
+```
