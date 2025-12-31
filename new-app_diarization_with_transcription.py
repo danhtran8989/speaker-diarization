@@ -28,7 +28,7 @@ from model import (
 )
 
 from login_and_download import hf_login
-hf_login()
+# hf_login()
 # ────────────────────────────────────────────────────────────────
 # Configuration & Globals
 # ────────────────────────────────────────────────────────────────
