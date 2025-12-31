@@ -302,10 +302,12 @@ with gr.Blocks(css=css, title="Speaker Diarization + Transcription") as demo:
             whisper_model_dropdown = gr.Dropdown(
                 choices=[
                     "vinai/PhoWhisper-large",
+                    "vinai/PhoWhisper-large-v2",
+                    "vinai/PhoWhisper-large-v3",
                     "openai/whisper-large-v3-turbo",
                     "openai/whisper-medium",
                 ],
-                value="vinai/PhoWhisper-large",
+                value="openai/whisper-large-v3-turbo",
                 label="Whisper Model",
                 info="PhoWhisper: tốt nhất cho tiếng Việt | Turbo: nhanh & tốt | Medium: cân bằng"
             )
