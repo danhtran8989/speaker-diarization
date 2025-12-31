@@ -27,6 +27,8 @@ from model import (
     speaker_segmentation_models,
 )
 
+from login_and_download import hf_login
+hf_login()
 # ────────────────────────────────────────────────────────────────
 # Configuration & Globals
 # ────────────────────────────────────────────────────────────────
