@@ -375,7 +375,7 @@ with gr.Blocks(css=css, title="Speaker Diarization + Transcription") as demo:
         framework = gr.Radio(
             choices=list(embedding2models.keys()),
             label="Embedding Framework",
-            value=list(embedding2models.keys())[0],
+            value=list(embedding2models.keys())[1],
         )
         emb_model = gr.Dropdown(
             choices=embedding2models[framework.value],
@@ -385,7 +385,7 @@ with gr.Blocks(css=css, title="Speaker Diarization + Transcription") as demo:
         seg_model = gr.Dropdown(
             choices=speaker_segmentation_models,
             label="Segmentation Model",
-            value=speaker_segmentation_models[0],
+            value=speaker_segmentation_models[2],
         )
     framework.change(
         lambda f: gr.Dropdown(choices=embedding2models[f], value=embedding2models[f][0]),
@@ -395,13 +395,13 @@ with gr.Blocks(css=css, title="Speaker Diarization + Transcription") as demo:
    
     with gr.Row():
         num_speakers = gr.Textbox(label="Number of speakers (0 = auto)", value="0", max_lines=1)
-        threshold = gr.Textbox(label="Clustering threshold (when num=0)", value="0.5", max_lines=1)
+        threshold = gr.Textbox(label="Clustering threshold (when num=0)", value="0.85", max_lines=1)
    
     with gr.Row():
         silence_threshold_slider = gr.Slider(
             minimum=-20,
             maximum=10,
-            value=-40,
+            value=-3,
             step=1,
             label="Silence Threshold (dBFS)",
             info="Giá trị càng cao → càng dễ coi là im lặng (ví dụ: -20 rất nhạy, +10 cực kỳ nhạy). Thường dùng -40 đến -30 cho tiếng nói bình thường."
