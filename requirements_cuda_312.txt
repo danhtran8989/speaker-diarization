@@ -2,3 +2,4 @@ huggingface_hub
 https://hf-mirror.com/csukuangfj/sherpa-onnx-wheels/resolve/main/cuda/1.12.15/sherpa_onnx-1.12.15+cuda12.cudnn9-cp312-cp312-linux_x86_64.whl
 onnxruntime-gpu
 git+https://github.com/danhtran8989/whisper-timestamped.git
+pydub
