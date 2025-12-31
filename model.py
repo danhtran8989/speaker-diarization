@@ -60,7 +60,9 @@ def get_file(
 def get_speaker_segmentation_model(repo_id) -> str:
     assert repo_id in (
         "pyannote/segmentation-3.0",
+        # "pyannote/segmentation-3.1,
         "Revai/reverb-diarization-v1",
+        "Revai/reverb-diarization-v2"
     )
     if repo_id == "pyannote/segmentation-3.0":
         return get_file(
@@ -70,6 +72,11 @@ def get_speaker_segmentation_model(repo_id) -> str:
     elif repo_id == "Revai/reverb-diarization-v1":
         return get_file(
             repo_id="csukuangfj/sherpa-onnx-reverb-diarization-v1",
+            filename="model.onnx",
+        )
+    elif repo_id == "Revai/reverb-diarization-v2":
+        return get_file(
+            repo_id="csukuangfj/sherpa-onnx-reverb-diarization-v2",
             filename="model.onnx",
         )
 
@@ -128,6 +135,7 @@ def get_speaker_diarization(
 speaker_segmentation_models = [
     "pyannote/segmentation-3.0",
     "Revai/reverb-diarization-v1",
+    "Revai/reverb-diarization-v2"
 ]
 
 nemo_speaker_embedding_models = [
@@ -165,3 +173,4 @@ embedding2models = {
     "NeMo": nemo_speaker_embedding_models,
     "WeSpeaker": wespeaker_embedding_models,
 }
+
