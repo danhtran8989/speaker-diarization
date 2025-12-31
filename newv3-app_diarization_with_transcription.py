@@ -2,13 +2,11 @@
 # app_diarization_with_transcription.py
 """
 Gradio app: Speaker Diarization + Whisper transcription
-Now with selectable Whisper model (Turbo / Medium / PhoWhisper)
-+ Silence detection: silent speaker segments are skipped (no Whisper call)
-Improved dark/light theme support + auto-save transcription to file
+With silence detection: silent segments are skipped for transcription
+Silence check extracted into reusable function
 Last update: Dec 2025
 """
 import os
-import shutil
 import tempfile
 import time
 import uuid
@@ -42,7 +40,7 @@ WHISPER_DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 print(f"Whisper will run on device: {WHISPER_DEVICE.upper()}")
 
 # ────────────────────────────────────────────────────────────────
-# Model loading with cache reset
+# Model loading
 # ────────────────────────────────────────────────────────────────
 def load_whisper_model(model_name: str):
     global whisper_model, current_whisper_model_name
@@ -53,7 +51,7 @@ def load_whisper_model(model_name: str):
     return whisper_model
 
 # ────────────────────────────────────────────────────────────────
-# Formatting & HTML Output
+# Formatting
 # ────────────────────────────────────────────────────────────────
 def format_time(seconds: float) -> str:
     hours = int(seconds // 3600)
@@ -83,6 +81,49 @@ def build_result_html(diarization_text: str, transcription_text: str, info: str)
         </div>
     </div>
     """
+
+# ────────────────────────────────────────────────────────────────
+# Silence detection function
+# ────────────────────────────────────────────────────────────────
+def is_segment_silent(seg_audio: AudioSegment, 
+                      min_silence_len: int = 500, 
+                      silence_thresh: int = -40, 
+                      silent_ratio_threshold: float = 0.9) -> bool:
+    """
+    Check if a pydub AudioSegment is mostly silent.
+    
+    Args:
+        seg_audio: pydub AudioSegment of the speaker turn
+        min_silence_len: minimum silence length in ms (default 500)
+        silence_thresh: dBFS threshold (default -40)
+        silent_ratio_threshold: if this ratio or more of the segment is silent → consider silent
+    
+    Returns:
+        True if segment is considered silent, False otherwise
+    """
+    # Quick check: overall loudness
+    if seg_audio.dBFS >= silence_thresh - 5:  # clearly has speech
+        return False
+    
+    # Detect silent ranges
+    silent_ranges = detect_silence(
+        seg_audio,
+        min_silence_len=min_silence_len,
+        silence_thresh=silence_thresh
+    )
+    
+    if not silent_ranges:
+        return False  # no silence detected → has speech
+    
+    # Calculate total silent duration
+    total_silent_ms = sum(stop - start for start, stop in silent_ranges)
+    segment_duration_ms = len(seg_audio)
+    
+    # If 90% or more is silent → treat as silent
+    if total_silent_ms >= segment_duration_ms * silent_ratio_threshold:
+        return True
+    
+    return False
 
 # ────────────────────────────────────────────────────────────────
 # Transcription Logic
@@ -178,15 +219,15 @@ def process_audio_with_transcription(
     )
     segments = sd.process(audio).sort_by_start_time()
 
-    # Convert full audio to pydub AudioSegment for efficient silence detection
+    # Convert full audio to pydub once for efficient slicing
     audio_pydub = AudioSegment(
         data=audio.tobytes(),
-        sample_width=audio.itemsize,  # 2 bytes for int16
+        sample_width=audio.itemsize,
         frame_rate=sample_rate,
         channels=1
     )
 
-    # Build results
+    # Results
     diarization_lines = []
     transcription_lines = []
     plain_transcription_lines = []
@@ -198,28 +239,13 @@ def process_audio_with_transcription(
         time_str = f"[{format_time(start)} → {format_time(end)}]"
         diarization_lines.append(f"{time_str} {speaker_id}")
 
-        # Extract segment in milliseconds for pydub
+        # Extract segment for silence check
         start_ms = int(start * 1000)
         end_ms = int(end * 1000)
         seg_audio = audio_pydub[start_ms:end_ms]
 
-        # Silence detection parameters (adjustable)
-        min_silence_len = 500   # ms
-        silence_thresh = -40    # dBFS
-
-        silent_ranges = detect_silence(seg_audio, min_silence_len=min_silence_len, silence_thresh=silence_thresh)
-
-        # Check if the segment is essentially silent
-        is_silent = False
-        if seg_audio.dBFS < silence_thresh - 5:  # Overall very quiet
-            is_silent = True
-        elif silent_ranges:
-            # If silence covers most of the segment
-            total_silence_ms = sum(stop - start for start, stop in silent_ranges)
-            if total_silence_ms >= (end_ms - start_ms) * 0.9:  # 90%+ silent
-                is_silent = True
-
-        if is_silent:
+        # Use the dedicated silence detection function
+        if is_segment_silent(seg_audio):
             text = "(im lặng)"
         else:
             text = transcribe_segment(audio, sample_rate, start, end, whisper_model_choice, whisper_language)
@@ -241,12 +267,12 @@ Thời gian xử lý: {elapsed:.2f} giây
 RTF: {rtf:.2f}x
 Whisper model: {whisper_model_choice}
 Device: {WHISPER_DEVICE.upper()}
-Silence detection: Enabled (skip Whisper on silent segments)"""
+Silence detection: Enabled"""
 
     if rtf > 1.5:
         info += "\n(Lần đầu load model sẽ chậm hơn. Chạy lần thứ 2 sẽ nhanh hơn.)"
 
-    # Cleanup temp files
+    # Cleanup
     for f in [wav_filename]:
         if os.path.exists(f):
             try:
@@ -259,7 +285,7 @@ Silence detection: Enabled (skip Whisper on silent segments)"""
         except:
             pass
 
-    # Save transcription to file
+    # Save transcription
     output_file = "segment_transcription.txt"
     try:
         with open(output_file, "w", encoding="utf-8") as f:
@@ -427,8 +453,8 @@ with gr.Blocks(css=css, title="Speaker Diarization + Transcription") as demo:
         ---
         **Công nghệ sử dụng:**
         • Phân đoạn người nói → **sherpa-onnx**
-        • Phiên âm → **whisper-timestamped** + selectable models
-        • Silence detection → **pydub**
+        • Phiên âm → **whisper-timestamped**
+        • Silence detection → **pydub** (skip Whisper on silent segments)
         • Giao diện → **Gradio**
         """
     )
