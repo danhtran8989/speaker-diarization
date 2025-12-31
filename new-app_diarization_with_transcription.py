@@ -33,7 +33,8 @@ from login_and_download import hf_login
 # Configuration & Globals
 # ────────────────────────────────────────────────────────────────
 
-WHISPER_MODEL_NAME = "openai/whisper-large-v3-turbo"
+# WHISPER_MODEL_NAME = "openai/whisper-large-v3-turbo"
+WHISPER_MODEL_NAME = "openai/whisper-medium"
 WHISPER_LANGUAGE = "vi"  # Vietnamese
 WHISPER_DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
